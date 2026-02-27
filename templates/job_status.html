@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Job status - PDF Translator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="5">
+    <style>
+        :root {
+            --win-bg: #020617;
+            --win-surface: #020617;
+            --accent: #22c55e;
+            --accent-strong: #16a34a;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-subtle: #1f2937;
+            --status-pending-bg: #78350f;
+            --status-pending-fg: #fde68a;
+            --status-running-bg: #0f172a;
+            --status-running-fg: #38bdf8;
+            --status-completed-bg: #022c22;
+            --status-completed-fg: #4ade80;
+            --status-failed-bg: #3f1d1d;
+            --status-failed-fg: #fca5a5;
+            --error-bg: #3f1d1d;
+            --error-fg: #fecaca;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--win-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-window {
+            width: min(960px, 100% - 32px);
+            border-radius: 18px;
+            background: radial-gradient(circle at top left, #022c22 0, #020617 55%);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        .app-window-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: linear-gradient(90deg, #020617, #022c22);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .window-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .window-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background-color: #1f2937;
+        }
+
+        .window-dot-min {
+            background-color: #eab308;
+        }
+
+        .window-dot-max {
+            background-color: #22c55e;
+        }
+
+        .window-dot-close {
+            background-color: #b91c1c;
+        }
+
+        .app-window-body {
+            padding: 20px 24px 24px;
+        }
+
+        .page {
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0 0 0.4rem;
+            color: var(--text-main);
+        }
+
+        p {
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.9rem;
+        }
+
+        .status {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.18rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            letter-spacing: 0.03em;
+        }
+
+        .status-pending {
+            background-color: var(--status-pending-bg);
+            color: var(--status-pending-fg);
+        }
+
+        .status-running {
+            background-color: var(--status-running-bg);
+            color: var(--status-running-fg);
+        }
+
+        .status-completed {
+            background-color: var(--status-completed-bg);
+            color: var(--status-completed-fg);
+        }
+
+        .status-failed {
+            background-color: var(--status-failed-bg);
+            color: var(--status-failed-fg);
+        }
+
+        .progress-container {
+            margin-top: 1rem;
+        }
+
+        .progress-bar-outer {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background-color: #020617;
+            border: 1px solid #1f2937;
+            overflow: hidden;
+        }
+
+        .progress-bar-inner {
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+            width: 0;
+            transition: width 0.25s ease-out;
+        }
+
+        .actions {
+            margin-top: 1.7rem;
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        a.button,
+        button.button {
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 999px;
+            padding: 0.5rem 1.4rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            font-weight: 500;
+            transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #020617;
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.45);
+        }
+
+        .button-primary:hover {
+            background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+            transform: translateY(-1px);
+        }
+
+        .button-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
+        }
+
+        .button-secondary {
+            background-color: #020617;
+            color: var(--text-main);
+            border: 1px solid #1f2937;
+        }
+
+        .button-secondary:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .button-secondary:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            background-color: var(--error-bg);
+            color: var(--error-fg);
+            font-size: 0.88rem;
+            border: 1px solid rgba(248, 113, 113, 0.45);
+        }
+
+        @media (max-width: 720px) {
+            .app-window {
+                width: 100%;
+                border-radius: 0;
+                box-shadow: none;
+                border-left: none;
+                border-right: none;
+            }
+
+            .app-window-body {
+                padding: 16px 16px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-window">
+        <div class="app-window-header">
+            <div class="window-title">PDF Translator · Status</div>
+            <div class="window-controls" aria-hidden="true">
+                <span class="window-dot window-dot-min"></span>
+                <span class="window-dot window-dot-max"></span>
+                <span class="window-dot window-dot-close"></span>
+            </div>
+        </div>
+        <div class="app-window-body">
+            <div class="page" data-job-id="{{ job.id }}">
+                <h1>Job status</h1>
+                <p class="meta">Job ID: {{ job.id }}</p>
+
+        {% set status = job.status %}
+        {% if status in ["partitioning", "translating", "rendering"] %}
+            {% set status_class = "status-running" %}
+        {% elif status == "completed" %}
+            {% set status_class = "status-completed" %}
+        {% elif status == "failed" %}
+            {% set status_class = "status-failed" %}
+        {% else %}
+            {% set status_class = "status-pending" %}
+        {% endif %}
+
+        <p class="status">
+            Status:
+            <span id="job-status" class="status-badge {{ status_class }}">{{ job.status }}</span>
+        </p>
+
+        <p id="job-stage">Current stage: {{ job.current_stage }}</p>
+
+        <div class="progress-container">
+            {% if job.total_elements > 0 %}
+                {% set percent = (job.translated_elements * 100) // job.total_elements %}
+            {% else %}
+                {% set percent = 0 %}
+            {% endif %}
+            <p id="job-progress">
+                Progress: {{ job.translated_elements }} / {{ job.total_elements }} elements ({{ percent }}%)
+            </p>
+            <div class="progress-bar-outer">
+                <div id="job-progress-bar" class="progress-bar-inner" data-percent="{{ percent }}"></div>
+            </div>
+        </div>
+
+        {% if job.error %}
+            <div class="error">
+                Error: {{ job.error }}
+            </div>
+        {% endif %}
+
+        <div class="actions">
+            <a class="button button-secondary" href="/">New translation</a>
+        </div>
+    </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const PROGRESS_POLL_INTERVAL_MS = 3000;
+            const INITIAL_POLL_DELAY_MS = 2000;
+
+            const progressBar = document.getElementById('job-progress-bar');
+            const statusElement = document.getElementById('job-status');
+            const stageElement = document.getElementById('job-stage');
+            const progressElement = document.getElementById('job-progress');
+            const downloadButton = document.getElementById('download-button');
+            const container = document.querySelector('.page');
+            const jobId = container ? container.getAttribute('data-job-id') : null;
+
+            let isActive = true;
+            let hasTriggeredDownload = false;
+
+            function updateBarFromPercent(percentValue) {
+                const numericRaw = Number(percentValue);
+                let numeric = numericRaw;
+
+                if (!Number.isFinite(numeric) || numeric < 0) {
+                    numeric = 0;
+                }
+                if (numeric > 100) {
+                    numeric = 100;
+                }
+                if (progressBar) {
+                    progressBar.style.width = String(numeric) + '%';
+                }
+            }
+
+            function updateFromJob(job) {
+                if (!job) {
+                    return;
+                }
+
+                if (statusElement) {
+                    statusElement.textContent = job.status;
+                }
+
+                if (stageElement) {
+                    stageElement.textContent = 'Current stage: ' + job.current_stage;
+                }
+
+                const totalRaw = Number(job.total_elements);
+                const translatedRaw = Number(job.translated_elements);
+                let percent = 0;
+                let total = totalRaw;
+                let translated = translatedRaw;
+
+                if (!Number.isFinite(total) || total < 0) {
+                    total = 0;
+                }
+                if (!Number.isFinite(translated) || translated < 0) {
+                    translated = 0;
+                }
+
+                if (total > 0) {
+                    percent = Math.floor((translated * 100) / total);
+                }
+
+                if (progressElement) {
+                    progressElement.textContent = 'Progress: ' + String(translated) + ' / ' + String(total) + ' elements (' + String(percent) + '%)';
+                }
+
+                updateBarFromPercent(percent);
+
+                if (downloadButton) {
+                    const isCompleted = job.status === 'completed';
+                    downloadButton.disabled = !isCompleted;
+                }
+
+                if (job.status === 'completed' && !hasTriggeredDownload && jobId) {
+                    hasTriggeredDownload = true;
+                    window.location.href = '/api/jobs/' + jobId + '/download?format=pdf';
+                }
+            }
+
+            function startPolling() {
+                if (!jobId) {
+                    return;
+                }
+
+                function poll() {
+                    if (!isActive) {
+                        return;
+                    }
+
+                    const request = new XMLHttpRequest();
+                    request.open('GET', '/api/jobs/' + jobId, true);
+                    request.onreadystatechange = function () {
+                        if (request.readyState !== 4) {
+                            return;
+                        }
+
+                        if (request.status !== 200) {
+                            return;
+                        }
+
+                        try {
+                            const data = JSON.parse(request.responseText);
+                            updateFromJob(data);
+
+                            if (data.status === 'completed' || data.status === 'failed') {
+                                isActive = false;
+                                return;
+                            }
+                        } catch (error) {
+                        }
+
+                        setTimeout(poll, PROGRESS_POLL_INTERVAL_MS);
+                    };
+                    request.send();
+                }
+
+                setTimeout(poll, INITIAL_POLL_DELAY_MS);
+            }
+
+            updateBarFromPercent(progressBar && progressBar.getAttribute('data-percent'));
+            startPolling();
+        }());
+    </script>
+</body>
+</html>

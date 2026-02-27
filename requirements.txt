@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+httpx
+pypdf
+fpdf2
+Jinja2
+python-multipart
+pywebview

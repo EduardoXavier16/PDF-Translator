@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>PDF Translator - Upload</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --win-bg: #020617;
+            --win-surface: #020617;
+            --win-surface-alt: #020617;
+            --accent: #22c55e;
+            --accent-strong: #16a34a;
+            --accent-soft: rgba(34, 197, 94, 0.15);
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-subtle: #1f2937;
+            --control-bg: #020617;
+            --control-border: #374151;
+            --control-border-focus: #22c55e;
+        }
+
+        .job-status-card {
+            margin-top: 1.75rem;
+            padding: 1rem 1.15rem 1.1rem;
+            border-radius: 14px;
+            background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.14), rgba(15, 23, 42, 0.96));
+            border: 1px solid var(--border-subtle);
+        }
+
+        .job-status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.4rem;
+        }
+
+        .job-status-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-main);
+        }
+
+        .job-status-meta {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .status {
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: var(--text-main);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.18rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            letter-spacing: 0.03em;
+        }
+
+        .status-pending {
+            background-color: #78350f;
+            color: #fde68a;
+        }
+
+        .status-running {
+            background-color: #0f172a;
+            color: #38bdf8;
+        }
+
+        .status-completed {
+            background-color: #022c22;
+            color: #4ade80;
+        }
+
+        .status-failed {
+            background-color: #3f1d1d;
+            color: #fca5a5;
+        }
+
+        .status-cancelled {
+            background-color: #111827;
+            color: #e5e7eb;
+        }
+
+        .progress-container {
+            margin-top: 0.4rem;
+        }
+
+        .progress-bar-outer {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background-color: #020617;
+            border: 1px solid #1f2937;
+            overflow: hidden;
+        }
+
+        .progress-bar-inner {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+            width: 0;
+            transition: width 0.25s ease-out;
+        }
+
+        .job-status-body {
+            margin-top: 0.65rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .job-progress-text {
+            font-size: 0.86rem;
+            color: var(--text-main);
+        }
+
+        .job-stage-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--win-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-window {
+            width: min(960px, 100% - 32px);
+            border-radius: 18px;
+            background: radial-gradient(circle at top left, #022c22 0, #020617 55%);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        .app-window-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: linear-gradient(90deg, #020617, #022c22);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .window-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .window-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background-color: #1f2937;
+        }
+
+        .window-dot-min {
+            background-color: #eab308;
+        }
+
+        .window-dot-max {
+            background-color: #22c55e;
+        }
+
+        .window-dot-close {
+            background-color: #b91c1c;
+        }
+
+        .app-window-body {
+            padding: 20px 24px 24px;
+        }
+
+        .page {
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin: 0 0 0.4rem;
+            color: var(--text-main);
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            margin: 0 0 1.5rem;
+            font-size: 0.92rem;
+            color: var(--text-muted);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        input[type="file"],
+        select,
+        input[type="number"] {
+            width: 100%;
+            padding: 0.55rem 0.8rem;
+            border-radius: 10px;
+            border: 1px solid var(--control-border);
+            font-size: 0.95rem;
+            background-color: var(--control-bg);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+        }
+
+        input[type="file"]::file-selector-button {
+            margin-right: 0.75rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            border: 0;
+            background-color: var(--accent);
+            color: #020617;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.18s ease, transform 0.12s ease;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background-color: var(--accent-strong);
+            transform: translateY(-1px);
+        }
+
+        input[type="file"]::file-selector-button:active {
+            transform: translateY(0);
+        }
+
+        input[type="file"]:focus-visible,
+        select:focus-visible,
+        input[type="number"]:focus-visible {
+            border-color: var(--control-border-focus);
+            box-shadow: 0 0 0 1px var(--control-border-focus);
+        }
+
+        .field {
+            margin-bottom: 1.1rem;
+        }
+
+        .field-inline {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .field-inline .field-part {
+            flex: 1;
+        }
+
+        .hint {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        .actions {
+            margin-top: 1.7rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 0.6rem 1.6rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #020617;
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.45);
+        }
+
+        .button-primary:hover {
+            background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+            transform: translateY(-1px);
+        }
+
+        .button-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
+        }
+
+        .button-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .button-secondary {
+            background-color: #111827;
+            color: var(--text-main);
+            border: 1px solid #4b5563;
+            padding-inline: 1.2rem;
+        }
+
+        .button-secondary:hover {
+            border-color: #f97373;
+            background-color: #1f2937;
+        }
+
+        .button-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 720px) {
+            .app-window {
+                width: 100%;
+                border-radius: 0;
+                box-shadow: none;
+                border-left: none;
+                border-right: none;
+            }
+
+            .app-window-body {
+                padding: 16px 16px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-window">
+        <div class="app-window-header">
+            <div class="window-title">PDF Translator</div>
+            <div class="window-controls" aria-hidden="true">
+                <span class="window-dot window-dot-min"></span>
+                <span class="window-dot window-dot-max"></span>
+                <span class="window-dot window-dot-close"></span>
+            </div>
+        </div>
+        <div class="app-window-body">
+            <div class="page">
+                <h1>PDF Translator</h1>
+                <p class="subtitle">Translate PDF documents between supported languages using your local engine.</p>
+
+                <form action="/jobs" method="post" enctype="multipart/form-data">
+                    <div class="field">
+                        <label for="file">PDF file</label>
+                        <input id="file" name="file" type="file" accept="application/pdf" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="source_lang">Source language</label>
+                        <select id="source_lang" name="source_lang">
+                            <option value="en" selected>English (en)</option>
+                            <option value="pt-BR">Portuguese (pt-BR)</option>
+                            <option value="es">Spanish (es)</option>
+                            <option value="fr">French (fr)</option>
+                            <option value="de">German (de)</option>
+                            <option value="it">Italian (it)</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="target_lang">Target language</label>
+                        <select id="target_lang" name="target_lang">
+                            <option value="pt-BR" selected>Portuguese (pt-BR)</option>
+                            <option value="en">English (en)</option>
+                            <option value="es">Spanish (es)</option>
+                            <option value="fr">French (fr)</option>
+                            <option value="de">German (de)</option>
+                            <option value="it">Italian (it)</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="strategy">Extraction strategy</label>
+                        <select id="strategy" name="strategy">
+                            <option value="auto" selected>Auto</option>
+                            <option value="fast">Fast</option>
+                            <option value="hi_res">High resolution</option>
+                            <option value="ocr_only">OCR only</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Page range to translate</label>
+                        <div class="field-inline">
+                            <div class="field-part">
+                                <label for="start_page">Start page (1-based)</label>
+                                <input id="start_page" name="start_page" type="number" min="1" step="1" value="1" required>
+                            </div>
+                            <div class="field-part">
+                                <label for="end_page">End page</label>
+                                <input id="end_page" name="end_page" type="number" min="1" step="1" value="50" required>
+                            </div>
+                        </div>
+                        <p class="hint">
+                            Each job translates only this range of pages. For example: 1–50, 51–100, 101–150.
+                        </p>
+                    </div>
+
+                    <div class="actions">
+                        <button class="button-primary" type="submit">Send for translation</button>
+                    </div>
+                </form>
+
+                {% if job %}
+                <div class="job-status-card">
+                    <div class="job-status-header">
+                        <div>
+                            <div class="job-status-title">Current job</div>
+                            <div class="job-status-meta">Job ID: {{ job.id }}</div>
+                        </div>
+                        <div class="status">
+                            <span
+                                id="job-status"
+                                class="status-badge"
+                            >
+                                {{ job.status }}
+                            </span>
+                            <button
+                                id="job-cancel-button"
+                                class="button-secondary"
+                                type="button"
+                            >
+                                Cancel translation
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="job-status-body">
+                        <div class="job-progress-text">
+                            <span id="job-progress">
+                                {{ job.translated_elements }} of {{ job.total_elements }} elements translated
+                            </span>
+                        </div>
+                        <div class="job-stage-text" id="job-stage">
+                            Stage: {{ job.current_stage }}
+                        </div>
+                        <div class="progress-container">
+                            {% set percent = 0 %}
+                            {% if job.total_elements > 0 %}
+                                {% set percent = (job.translated_elements * 100) // job.total_elements %}
+                            {% endif %}
+                            <div class="progress-bar-outer">
+                                <div
+                                    id="job-progress-bar"
+                                    class="progress-bar-inner"
+                                    data-percent="{{ percent }}"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if job %}
+    <script>
+        (function () {
+            const PROGRESS_POLL_INTERVAL_MS = 3000;
+            const INITIAL_POLL_DELAY_MS = 1500;
+
+            const jobId = '{{ job.id }}';
+            const progressBar = document.getElementById('job-progress-bar');
+            const statusElement = document.getElementById('job-status');
+            const stageElement = document.getElementById('job-stage');
+            const progressTextElement = document.getElementById('job-progress');
+            const cancelButton = document.getElementById('job-cancel-button');
+
+            let isActive = true;
+            let hasTriggeredDownload = false;
+
+            function updateBarFromPercent(percentText) {
+                if (!progressBar) {
+                    return;
+                }
+                const parsed = typeof percentText === 'string' ? parseInt(percentText, 10) : percentText;
+                if (!Number.isFinite(parsed)) {
+                    return;
+                }
+                const safePercent = Math.max(0, Math.min(parsed, 100));
+                progressBar.style.width = safePercent.toString().concat('%');
+            }
+
+            function setStatusBadge(status) {
+                if (!statusElement) {
+                    return;
+                }
+
+                let statusClass = 'status-pending';
+                if (status === 'completed') {
+                    statusClass = 'status-completed';
+                } else if (status === 'failed') {
+                    statusClass = 'status-failed';
+                } else if (status === 'partitioning' || status === 'translating' || status === 'rendering') {
+                    statusClass = 'status-running';
+                } else if (status === 'cancelled') {
+                    statusClass = 'status-cancelled';
+                }
+
+                statusElement.className = 'status-badge '.concat(statusClass);
+                statusElement.textContent = status;
+            }
+
+            function syncCancelButton(status) {
+                if (!cancelButton) {
+                    return;
+                }
+                const isFinal =
+                    status === 'completed' ||
+                    status === 'failed' ||
+                    status === 'cancelled';
+                cancelButton.disabled = isFinal;
+            }
+
+            function sendCancelRequest() {
+                if (!jobId || !cancelButton) {
+                    return;
+                }
+
+                cancelButton.disabled = true;
+
+                const request = new XMLHttpRequest();
+                request.open('POST', '/api/jobs/'.concat(jobId, '/cancel'), true);
+                request.onreadystatechange = function () {
+                    if (request.readyState !== 4) {
+                        return;
+                    }
+
+                    if (request.status !== 200) {
+                        return;
+                    }
+
+                    try {
+                        const data = JSON.parse(request.responseText);
+                        updateFromJob(data);
+                    } catch (error) {
+                    }
+                };
+                request.send();
+            }
+
+            function updateFromJob(job) {
+                if (!job) {
+                    return;
+                }
+
+                const status = job.status;
+                const total = job.total_elements;
+                const translated = job.translated_elements;
+
+                setStatusBadge(status);
+                syncCancelButton(status);
+
+                if (stageElement && typeof job.current_stage === 'string') {
+                    stageElement.textContent = 'Stage: '.concat(job.current_stage);
+                }
+
+                if (progressTextElement && typeof total === 'number' && typeof translated === 'number') {
+                    progressTextElement.textContent = ''.concat(translated.toString(), ' of ', total.toString(), ' elements translated');
+                }
+
+                if (typeof total === 'number' && typeof translated === 'number' && total > 0) {
+                    const percent = Math.floor((translated * 100) / total);
+                    updateBarFromPercent(percent);
+                }
+
+                if (!hasTriggeredDownload && status === 'completed') {
+                    hasTriggeredDownload = true;
+                    window.location.href = '/api/jobs/'.concat(jobId, '/download?format=pdf');
+                }
+            }
+
+            function startPolling() {
+                if (!jobId) {
+                    return;
+                }
+
+                function poll() {
+                    if (!isActive) {
+                        return;
+                    }
+
+                    const request = new XMLHttpRequest();
+                    request.open('GET', '/api/jobs/'.concat(jobId), true);
+                    request.onreadystatechange = function () {
+                        if (request.readyState !== 4) {
+                            return;
+                        }
+
+                        if (request.status !== 200) {
+                            return;
+                        }
+
+                        try {
+                            const data = JSON.parse(request.responseText);
+                            updateFromJob(data);
+
+                            if (
+                                data.status === 'completed' ||
+                                data.status === 'failed' ||
+                                data.status === 'cancelled'
+                            ) {
+                                isActive = false;
+                                return;
+                            }
+                        } catch (error) {
+                        }
+
+                        setTimeout(poll, PROGRESS_POLL_INTERVAL_MS);
+                    };
+                    request.send();
+                }
+
+                setTimeout(poll, INITIAL_POLL_DELAY_MS);
+            }
+
+            if (progressBar && progressBar.getAttribute('data-percent')) {
+                updateBarFromPercent(progressBar.getAttribute('data-percent'));
+            }
+
+            if (cancelButton) {
+                cancelButton.addEventListener('click', sendCancelRequest);
+            }
+
+            startPolling();
+        }());
+    </script>
+    {% endif %}
+</body>
+</html>
