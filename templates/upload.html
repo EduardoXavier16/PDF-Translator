@@ -355,6 +355,31 @@
                 padding: 16px 16px 20px;
             }
         }
+
+        body.desktop-host {
+            align-items: stretch;
+            justify-content: flex-start;
+        }
+
+        body.desktop-host .app-window {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 0;
+            box-shadow: none;
+            border: none;
+        }
+
+        body.desktop-host .app-window-header {
+            display: none;
+        }
+
+        body.desktop-host .app-window-body {
+            padding: 16px 20px 20px;
+        }
+
+        body.browser-host .app-window {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -599,7 +624,19 @@
 
                 if (!hasTriggeredDownload && status === 'completed') {
                     hasTriggeredDownload = true;
-                    window.location.href = '/api/jobs/'.concat(jobId, '/download?format=pdf');
+
+                    const hasDesktopApi =
+                        typeof window.pywebview === 'object' &&
+                        window.pywebview !== null &&
+                        typeof window.pywebview.api === 'object' &&
+                        window.pywebview.api !== null &&
+                        typeof window.pywebview.api.save_translated_pdf === 'function';
+
+                    if (hasDesktopApi) {
+                        window.pywebview.api.save_translated_pdf(jobId);
+                    } else {
+                        window.location.href = '/api/jobs/'.concat(jobId, '/download?format=pdf');
+                    }
                 }
             }
 
@@ -660,4 +697,24 @@
     </script>
     {% endif %}
 </body>
+<script>
+    (function () {
+        const hasDesktopApi =
+            typeof window.pywebview === 'object' &&
+            window.pywebview !== null &&
+            typeof window.pywebview.api === 'object' &&
+            window.pywebview.api !== null;
+
+        const body = document.body;
+        if (!body) {
+            return;
+        }
+
+        if (hasDesktopApi) {
+            body.classList.add('desktop-host');
+        } else {
+            body.classList.add('browser-host');
+        }
+    }());
+</script>
 </html>

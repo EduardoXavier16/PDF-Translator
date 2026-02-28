@@ -6,3 +6,4 @@ fpdf2
 Jinja2
 python-multipart
 pywebview
+requests

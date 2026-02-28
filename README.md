@@ -78,6 +78,7 @@ Python dependencies (installed from `requirements.txt`):
 - Jinja2
 - python-multipart
 - pywebview
+- requests
 
 For building a desktop executable later:
 
@@ -202,10 +203,18 @@ For pull requests:
 - Keep the Python code readable and small, focused functions.
 - Avoid introducing Docker-specific files unless the desktop story remains the primary focus.
 
+To rebuild the Windows desktop executable after changes to the app:
+
+```bash
+cd c:\projects\translater
+python -m PyInstaller "PDF Translator.spec"
+```
+
+This uses the existing spec file, which already bundles the `templates/` and `static/` folders alongside the executable.
+
 ---
 
 ## 9. License
 
 The repository currently does not declare an explicit license.  
 Before publishing publicly, you should choose and add a license file (for example MIT, Apache 2.0, etc.).
-
